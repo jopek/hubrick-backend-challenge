@@ -82,7 +82,7 @@ public class Application {
     reports.put("employee-age-by-department.csv", getEmployeeMedianAge().process(employees));
 
     reports.put("income-average-by-gender-and-department.csv", getEmployeeAverageIncomeByGenderAndDepartment().process(employees));
-    reports.put("emplyee-count-by-gender-and-department.csv", getEmployeeCountByGenderAndDepartment().process(employees));
+    reports.put("employee-count-by-gender-and-department.csv", getEmployeeCountByGenderAndDepartment().process(employees));
   }
 
   private void write() {
