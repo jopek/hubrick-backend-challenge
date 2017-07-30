@@ -5,7 +5,9 @@ import me.lxbluem.filereader.DepartmentsReader;
 import me.lxbluem.filereader.EmployeesReader;
 import me.lxbluem.model.Employee;
 import me.lxbluem.model.Report;
+import me.lxbluem.processor.AbstractProcessor;
 import me.lxbluem.processor.AverageProcessor;
+import me.lxbluem.processor.CountingProcessor;
 import me.lxbluem.processor.PercentileProcessor;
 
 import java.io.IOException;
@@ -23,6 +25,7 @@ public class Application {
   private ReportWriter reportWriter;
   private final AverageProcessor<Employee> employeeAverageProcessor;
   private final PercentileProcessor<Employee> employeePercentileProcessor;
+  private final CountingProcessor<Employee> employeeCountingProcessor;
 
   public static void main(String[] args) {
     if (args.length != 1) {
@@ -33,9 +36,10 @@ public class Application {
     ReportWriter reportWriter = new ReportWriter();
     AverageProcessor<Employee> employeeAverageProcessor = new AverageProcessor<>();
     PercentileProcessor<Employee> employeePercentileProcessor = new PercentileProcessor<>();
+    CountingProcessor<Employee> employeeCountingProcessor = new CountingProcessor<>();
     EmployeeBuilder employeeBuilder = getEmployeeBuilder(args[0]);
 
-    Application app = new Application(employeeBuilder, reportWriter, employeeAverageProcessor, employeePercentileProcessor);
+    Application app = new Application(employeeBuilder, reportWriter, employeeAverageProcessor, employeePercentileProcessor, employeeCountingProcessor);
     app.read();
     app.process();
     app.write();
@@ -54,11 +58,13 @@ public class Application {
       EmployeeBuilder employeeBuilder,
       ReportWriter reportWriter,
       AverageProcessor<Employee> employeeAverageProcessor,
-      PercentileProcessor<Employee> employeePercentileProcessor) {
+      PercentileProcessor<Employee> employeePercentileProcessor,
+      CountingProcessor<Employee> employeeCountingProcessor) {
     this.employeeBuilder = employeeBuilder;
     this.reportWriter = reportWriter;
     this.employeeAverageProcessor = employeeAverageProcessor;
     this.employeePercentileProcessor = employeePercentileProcessor;
+    this.employeeCountingProcessor = employeeCountingProcessor;
   }
 
   private void read() {
@@ -74,6 +80,9 @@ public class Application {
     reports.put("income-95-by-department.csv", getEmployee95PercentileIncome().process(employees));
     reports.put("income-average-by-age-range.csv", getEmployeeAverageIncomeByAge().process(employees));
     reports.put("employee-age-by-department.csv", getEmployeeMedianAge().process(employees));
+
+    reports.put("income-average-by-gender-and-department.csv", getEmployeeAverageIncomeByGenderAndDepartment().process(employees));
+    reports.put("emplyee-count-by-gender-and-department.csv", getEmployeeCountByGenderAndDepartment().process(employees));
   }
 
   private void write() {
@@ -86,30 +95,30 @@ public class Application {
     });
   }
 
-  private PercentileProcessor<Employee> getEmployeeMedianIncome() {
-    PercentileProcessor<Employee> percentileProcessor = employeePercentileProcessor;
-    percentileProcessor.setColumnNames(Arrays.asList("Department", "Median Income"));
-    percentileProcessor.setReportKeyFunction(employee -> employee.getDepartment().getName());
-    percentileProcessor.setReportValueFunction(Employee::getSalary);
-    percentileProcessor.setPercentile(50);
-    return percentileProcessor;
+  private AbstractProcessor<Employee> getEmployeeMedianIncome() {
+    PercentileProcessor<Employee> processor = employeePercentileProcessor;
+    processor.setColumnNames(Arrays.asList("Department", "Median Income"));
+    processor.setReportKeyFunction(employee -> employee.getDepartment().getName());
+    processor.setReportValueFunction(Employee::getSalary);
+    processor.setPercentile(50);
+    return processor;
   }
 
-  private PercentileProcessor<Employee> getEmployee95PercentileIncome() {
-    PercentileProcessor<Employee> percentileProcessor = employeePercentileProcessor;
-    percentileProcessor.setColumnNames(Arrays.asList("Department", "95 Percentile Income"));
-    percentileProcessor.setReportKeyFunction(employee -> employee.getDepartment().getName());
-    percentileProcessor.setReportValueFunction(Employee::getSalary);
-    percentileProcessor.setPercentile(95);
-    return percentileProcessor;
+  private AbstractProcessor<Employee> getEmployee95PercentileIncome() {
+    PercentileProcessor<Employee> processor = employeePercentileProcessor;
+    processor.setColumnNames(Arrays.asList("Department", "95 Percentile Income"));
+    processor.setReportKeyFunction(employee -> employee.getDepartment().getName());
+    processor.setReportValueFunction(Employee::getSalary);
+    processor.setPercentile(95);
+    return processor;
   }
 
-  private AverageProcessor<Employee> getEmployeeAverageIncomeByAge() {
-    AverageProcessor<Employee> employeeAverageAgeProcessor = employeeAverageProcessor;
-    employeeAverageAgeProcessor.setColumnNames(Arrays.asList("Age Range", "Average Income"));
-    employeeAverageAgeProcessor.setReportKeyFunction(employee -> getAgeSteps(employee.getPerson().getAge()));
-    employeeAverageAgeProcessor.setReportValueFunction(Employee::getSalary);
-    return employeeAverageAgeProcessor;
+  private AbstractProcessor<Employee> getEmployeeAverageIncomeByAge() {
+    AverageProcessor<Employee> processor = employeeAverageProcessor;
+    processor.setColumnNames(Arrays.asList("Age Range", "Average Income"));
+    processor.setReportKeyFunction(employee -> getAgeSteps(employee.getPerson().getAge()));
+    processor.setReportValueFunction(Employee::getSalary);
+    return processor;
   }
 
   private String getAgeSteps(int age) {
@@ -123,13 +132,29 @@ public class Application {
     return String.format("%d - %d", floor, ceil);
   }
 
-  private PercentileProcessor<Employee> getEmployeeMedianAge() {
-    PercentileProcessor<Employee> percentileProcessor = employeePercentileProcessor;
-    percentileProcessor.setColumnNames(Arrays.asList("Department", "Median Age"));
-    percentileProcessor.setReportKeyFunction(employee -> employee.getDepartment().getName());
-    percentileProcessor.setReportValueFunction(employee -> (double) employee.getPerson().getAge());
-    percentileProcessor.setPercentile(50);
-    return percentileProcessor;
+  private AbstractProcessor<Employee> getEmployeeMedianAge() {
+    PercentileProcessor<Employee> processor = employeePercentileProcessor;
+    processor.setColumnNames(Arrays.asList("Department", "Median Age"));
+    processor.setReportKeyFunction(employee -> employee.getDepartment().getName());
+    processor.setReportValueFunction(employee -> (double) employee.getPerson().getAge());
+    processor.setPercentile(50);
+    return processor;
   }
+
+  private AbstractProcessor<Employee> getEmployeeAverageIncomeByGenderAndDepartment() {
+    AverageProcessor<Employee> processor = employeeAverageProcessor;
+    processor.setColumnNames(Arrays.asList("Department And Gender", "Average Income"));
+    processor.setReportKeyFunction(employee -> employee.getDepartment().getName() + " " + employee.getPerson().getGender());
+    processor.setReportValueFunction(Employee::getSalary);
+    return processor;
+  }
+
+  private AbstractProcessor<Employee> getEmployeeCountByGenderAndDepartment() {
+    CountingProcessor<Employee> processor = employeeCountingProcessor;
+    processor.setColumnNames(Arrays.asList("Department And Gender", "People Count"));
+    processor.setReportKeyFunction(employee -> employee.getDepartment().getName() + " " + employee.getPerson().getGender());
+    return processor;
+  }
+
 
 }

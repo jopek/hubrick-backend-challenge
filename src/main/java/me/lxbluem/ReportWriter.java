@@ -29,6 +29,7 @@ public class ReportWriter {
         .entrySet()
         .stream()
         .map(entry -> String.format("%s,%.2f", entry.getKey(), entry.getValue()))
+        .sorted()
         .collect(toList());
   }
 
