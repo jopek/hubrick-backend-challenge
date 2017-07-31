@@ -1,7 +1,5 @@
 package me.lxbluem.processor;
 
-import me.lxbluem.model.Report;
-
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
@@ -11,26 +9,9 @@ public class PercentileProcessor<T> extends AbstractProcessor<T> {
 
   private double percentile;
 
-  @Override
-  public Report process(List<T> entries) {
-    Map<String, List<T>> groupedEntries = entries.stream()
-        .collect(Collectors.groupingBy(
-            reportKeyFunction,
-            Collectors.toList()
-        ));
-
-    Map<String, Double> groupedEntriesProcessed = groupedEntries.entrySet()
-        .stream()
-        .collect(Collectors.toMap(
-            Map.Entry::getKey,
-            this::getPercentile
-        ));
-
-    return Report.of(groupedEntriesProcessed, columnNames);
-  }
-
   // linear interpolation between closest ranks: https://en.wikipedia.org/wiki/Percentile#The_linear_interpolation_between_closest_ranks_method
-  private Double getPercentile(Map.Entry<String, List<T>> entries) {
+  @Override
+  public Double aggregate(Map.Entry<String, List<T>> entries) {
     List<T> sortedList = entries.getValue()
         .stream()
         .sorted(Comparator.comparingDouble(e -> reportValueFunction.apply(e)))
@@ -39,7 +20,6 @@ public class PercentileProcessor<T> extends AbstractProcessor<T> {
     if (sortedList.size() == 1) {
       return reportValueFunction.apply(sortedList.get(0));
     }
-
 
     // second variant, C = 1
     double rank = percentile / 100 * (sortedList.size() - 1) + 1;
