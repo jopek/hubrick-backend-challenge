@@ -38,23 +38,31 @@ public class MappingProcessorTest {
   public void name() throws Exception {
     List<X> xes = asList(
         new X("a", 1, 1),
-        new X("b", 1, 2),
-        new X("c", 2, 1),
-        new X("c", 2, 3),
-        new X("c", 2, 4),
+        new X("a", 1, 2),
+        new X("a", 2, 1),
+        new X("a", 2, 3),
+        new X("a", 2, 4),
+        new X("a", 20, 4),
         new X("d", 3, 6),
-        new X("d", 4, 7),
+        new X("d", 0, 7),
         new X("e", 4, 6),
         new X("e", 5, 3)
     );
 
-    List<Function<X, Object>> functions = asList(
+    List<Function<X, Object>> keyFunctions = asList(
         x -> x.name,
         x -> x.val1 / 3
     );
 
+    List<Function<List<X>, Object>> valueFunctions = asList(
+        xs -> (long) xs.size(),
+        xs -> xs.stream().mapToInt(x -> x.val1).max().orElse(0),
+        xs -> xs.stream().mapToInt(x -> x.val1).min().orElse(0),
+        xs -> xs.stream().mapToDouble(x -> x.val2 * 10.).average().orElse(0)
+    );
+
     Map<List<Object>, List<X>> collect = xes.stream().collect(groupingBy(
-        x -> getKey(functions, x),
+        x -> getKeyList(keyFunctions, x),
         toList()
     ));
 
@@ -62,15 +70,11 @@ public class MappingProcessorTest {
       System.out.printf("%s: %s\n", k, v);
     });
 
-    Map<List<Object>, Double> objectMap = collect.entrySet()
+    Map<List<Object>, List<Object>> objectMap = collect.entrySet()
         .stream()
         .collect(toMap(
             Map.Entry::getKey,
-            entry -> entry.getValue()
-                .stream()
-                .mapToDouble(x -> x.val2 * 10.)
-                .average()
-                .orElse(0)
+            entry -> runValueFunctions(entry, valueFunctions)
         ));
 
     objectMap
@@ -85,9 +89,15 @@ public class MappingProcessorTest {
 
   }
 
-  private List<Object> getKey(List<Function<X, Object>> functions, X x) {
+  private List<Object> getKeyList(List<Function<X, Object>> functions, X x) {
     return functions.stream()
         .map(f -> f.apply(x))
+        .collect(toList());
+  }
+
+  private List<Object> runValueFunctions(Map.Entry<List<Object>, List<X>> entry, List<Function<List<X>, Object>> valueFunctions) {
+    return valueFunctions.stream()
+        .map(f -> f.apply(entry.getValue()))
         .collect(toList());
   }
 
