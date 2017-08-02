@@ -2,8 +2,10 @@ package me.lxbluem.processor;
 
 import me.lxbluem.model.Report;
 
-import java.util.*;
-import java.util.function.Function;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 import static java.util.stream.Collectors.toList;
@@ -12,16 +14,6 @@ public class Processor<T> {
 
   private List<Selector<T>> selectors = new ArrayList<>();
   private List<Aggregator<T>> aggregators = new ArrayList<>();
-
-  public void addSelector(Selector<T> selector) {
-    validateSelector(selector);
-    selectors.add(selector);
-  }
-
-  public void addAggregator(Aggregator<T> aggregator) {
-    validateAggregator(aggregator);
-    aggregators.add(aggregator);
-  }
 
   public Report process(List<T> entries) {
     Map<List<Object>, List<T>> groupedEntries = entries.stream()
@@ -34,7 +26,7 @@ public class Processor<T> {
         .stream()
         .collect(Collectors.toMap(
             Map.Entry::getKey,
-            this::aggregate
+            this::runAggregationFunctions
         ));
 
     List<String> columnNames = new ArrayList<>();
@@ -56,12 +48,14 @@ public class Processor<T> {
     return Report.of(values, columnNames);
   }
 
-  private List<String> getAggregatorNames() {
-    return aggregators.stream().map(s->s.name).collect(toList());
+  public void addSelector(Selector<T> selector) {
+    validateSelector(selector);
+    selectors.add(selector);
   }
 
-  private List<String> getSelectorNames() {
-    return selectors.stream().map(s->s.name).collect(toList());
+  public void addAggregator(Aggregator<T> aggregator) {
+    validateAggregator(aggregator);
+    aggregators.add(aggregator);
   }
 
   private List<Object> getKeyList(T key) {
@@ -70,10 +64,18 @@ public class Processor<T> {
         .collect(toList());
   }
 
-  private List<Number> aggregate(Map.Entry<List<Object>, List<T>> entries) {
+  private List<Number> runAggregationFunctions(Map.Entry<List<Object>, List<T>> entries) {
     return aggregators.stream()
         .map(aggregator -> aggregator.function.apply(entries.getValue()))
         .collect(toList());
+  }
+
+  private List<String> getSelectorNames() {
+    return selectors.stream().map(s -> s.name).collect(toList());
+  }
+
+  private List<String> getAggregatorNames() {
+    return aggregators.stream().map(s -> s.name).collect(toList());
   }
 
   private void validateSelector(Selector selector) {
@@ -90,23 +92,4 @@ public class Processor<T> {
       throw new IllegalArgumentException("Selector's function must not be null");
   }
 
-  public static class Selector<T> {
-    public String name;
-    public Function<T, String> function;
-
-    public Selector(String name, Function<T, String> function) {
-      this.name = name;
-      this.function = function;
-    }
-  }
-
-  public static class Aggregator<T> {
-    public String name;
-    public Function<List<T>, Number> function;
-
-    public Aggregator(String name, Function<List<T>, Number> function) {
-      this.name = name;
-      this.function = function;
-    }
-  }
 }

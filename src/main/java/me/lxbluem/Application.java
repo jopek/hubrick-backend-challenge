@@ -83,24 +83,24 @@ public class Application {
   private Processor<Employee> getEmployeeMedianIncome() {
     Percentile<Employee> percentile = new Percentile<>(50, Employee::getSalary);
     Processor<Employee> processor = new Processor<>();
-    processor.addSelector(new Processor.Selector<>("Department", employee -> employee.getDepartment().getName()));
-    processor.addAggregator(new Processor.Aggregator<>("Median Income", percentile::get));
+    processor.addSelector(new Selector<>("Department", employee -> employee.getDepartment().getName()));
+    processor.addAggregator(new Aggregator<>("Median Income", percentile::get));
     return processor;
   }
 
   private Processor<Employee> getEmployee95PercentileIncome() {
     Percentile<Employee> percentile = new Percentile<>(95, Employee::getSalary);
     Processor<Employee> processor = new Processor<>();
-    processor.addSelector(new Processor.Selector<>("Department", employee -> employee.getDepartment().getName()));
-    processor.addAggregator(new Processor.Aggregator<>("Median Income", percentile::get));
+    processor.addSelector(new Selector<>("Department", employee -> employee.getDepartment().getName()));
+    processor.addAggregator(new Aggregator<>("Median Income", percentile::get));
     return processor;
   }
 
   private Processor<Employee> getEmployeeAverageIncomeByAge() {
     Average<Employee> average = new Average<>(Employee::getSalary);
     Processor<Employee> processor = new Processor<>();
-    processor.addSelector(new Processor.Selector<>("Age Range", employee -> getAgeSteps(employee.getPerson().getAge())));
-    processor.addAggregator(new Processor.Aggregator<>("Average Income", average::get));
+    processor.addSelector(new Selector<>("Age Range", employee -> getAgeSteps(employee.getPerson().getAge())));
+    processor.addAggregator(new Aggregator<>("Average Income", average::get));
     return processor;
   }
 
@@ -118,25 +118,25 @@ public class Application {
   private Processor<Employee> getEmployeeMedianAge() {
     Percentile<Employee> percentile = new Percentile<>(50, employee -> (double) employee.getPerson().getAge());
     Processor<Employee> processor = new Processor<>();
-    processor.addSelector(new Processor.Selector<>("Department", employee -> employee.getDepartment().getName()));
-    processor.addAggregator(new Processor.Aggregator<>("Median Age", percentile::get));
+    processor.addSelector(new Selector<>("Department", employee -> employee.getDepartment().getName()));
+    processor.addAggregator(new Aggregator<>("Median Age", percentile::get));
     return processor;
   }
 
   private Processor<Employee> getEmployeeAverageIncomeByGenderAndDepartment() {
     Average<Employee> average = new Average<>(Employee::getSalary);
     Processor<Employee> processor = new Processor<>();
-    processor.addSelector(new Processor.Selector<>("Department", employee -> employee.getDepartment().getName()));
-    processor.addSelector(new Processor.Selector<>("Gender", employee -> employee.getPerson().getGender().name()));
-    processor.addAggregator(new Processor.Aggregator<>("Average Income", average::get));
+    processor.addSelector(new Selector<>("Department", employee -> employee.getDepartment().getName()));
+    processor.addSelector(new Selector<>("Gender", employee -> employee.getPerson().getGender().name()));
+    processor.addAggregator(new Aggregator<>("Average Income", average::get));
     return processor;
   }
 
   private Processor<Employee> getEmployeeCountByGenderAndDepartment() {
     Processor<Employee> processor = new Processor<>();
-    processor.addSelector(new Processor.Selector<>("Department", employee -> employee.getDepartment().getName()));
-    processor.addSelector(new Processor.Selector<>("Gender", employee -> employee.getPerson().getGender().name()));
-    processor.addAggregator(new Processor.Aggregator<>("Employee Count", List::size));
+    processor.addSelector(new Selector<>("Department", employee -> employee.getDepartment().getName()));
+    processor.addSelector(new Selector<>("Gender", employee -> employee.getPerson().getGender().name()));
+    processor.addAggregator(new Aggregator<>("Employee Count", List::size));
     return processor;
   }
 

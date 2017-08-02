@@ -40,10 +40,10 @@ public class ProcessorTest {
         new Thing("b", 6)
     );
 
-    thingProcessor.addSelector(new Processor.Selector<>("name", thing -> thing.name));
-    thingProcessor.addAggregator(new Processor.Aggregator<>("count", List::size));
+    thingProcessor.addSelector(new Selector<>("name", thing -> thing.name));
+    thingProcessor.addAggregator(new Aggregator<>("count", List::size));
     thingProcessor.addAggregator(
-        new Processor.Aggregator<>(
+        new Aggregator<>(
             "avg",
             thingList -> thingList.stream()
                 .mapToDouble(t -> t.value)
