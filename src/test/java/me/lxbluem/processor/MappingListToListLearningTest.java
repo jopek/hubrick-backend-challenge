@@ -11,7 +11,7 @@ import java.util.stream.Collectors;
 import static java.util.Arrays.asList;
 import static java.util.stream.Collectors.*;
 
-public class MappingProcessorTest {
+public class MappingListToListLearningTest {
   @Test
   public void llo() throws Exception {
     List<Integer> integers = asList(

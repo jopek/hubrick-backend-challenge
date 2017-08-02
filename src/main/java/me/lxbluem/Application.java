@@ -5,15 +5,13 @@ import me.lxbluem.filereader.DepartmentsReader;
 import me.lxbluem.filereader.EmployeesReader;
 import me.lxbluem.model.Employee;
 import me.lxbluem.model.Report;
-import me.lxbluem.processor.AbstractProcessor;
-import me.lxbluem.processor.AverageProcessor;
-import me.lxbluem.processor.CountingProcessor;
-import me.lxbluem.processor.PercentileProcessor;
+import me.lxbluem.processor.*;
+import me.lxbluem.processor.methods.Average;
+import me.lxbluem.processor.methods.Percentile;
 
 import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -23,9 +21,6 @@ public class Application {
   private List<Employee> employees;
   private Map<String, Report> reports = new HashMap<>();
   private ReportWriter reportWriter;
-  private final AverageProcessor<Employee> employeeAverageProcessor;
-  private final PercentileProcessor<Employee> employeePercentileProcessor;
-  private final CountingProcessor<Employee> employeeCountingProcessor;
 
   public static void main(String[] args) {
     if (args.length != 1) {
@@ -34,12 +29,9 @@ public class Application {
     }
 
     ReportWriter reportWriter = new ReportWriter();
-    AverageProcessor<Employee> employeeAverageProcessor = new AverageProcessor<>();
-    PercentileProcessor<Employee> employeePercentileProcessor = new PercentileProcessor<>();
-    CountingProcessor<Employee> employeeCountingProcessor = new CountingProcessor<>();
     EmployeeBuilder employeeBuilder = getEmployeeBuilder(args[0]);
 
-    Application app = new Application(employeeBuilder, reportWriter, employeeAverageProcessor, employeePercentileProcessor, employeeCountingProcessor);
+    Application app = new Application(employeeBuilder, reportWriter);
     app.read();
     app.process();
     app.write();
@@ -56,15 +48,9 @@ public class Application {
 
   private Application(
       EmployeeBuilder employeeBuilder,
-      ReportWriter reportWriter,
-      AverageProcessor<Employee> employeeAverageProcessor,
-      PercentileProcessor<Employee> employeePercentileProcessor,
-      CountingProcessor<Employee> employeeCountingProcessor) {
+      ReportWriter reportWriter) {
     this.employeeBuilder = employeeBuilder;
     this.reportWriter = reportWriter;
-    this.employeeAverageProcessor = employeeAverageProcessor;
-    this.employeePercentileProcessor = employeePercentileProcessor;
-    this.employeeCountingProcessor = employeeCountingProcessor;
   }
 
   private void read() {
@@ -80,7 +66,6 @@ public class Application {
     reports.put("income-95-by-department.csv", getEmployee95PercentileIncome().process(employees));
     reports.put("income-average-by-age-range.csv", getEmployeeAverageIncomeByAge().process(employees));
     reports.put("employee-age-by-department.csv", getEmployeeMedianAge().process(employees));
-
     reports.put("income-average-by-gender-and-department.csv", getEmployeeAverageIncomeByGenderAndDepartment().process(employees));
     reports.put("employee-count-by-gender-and-department.csv", getEmployeeCountByGenderAndDepartment().process(employees));
   }
@@ -95,29 +80,27 @@ public class Application {
     });
   }
 
-  private AbstractProcessor<Employee> getEmployeeMedianIncome() {
-    PercentileProcessor<Employee> processor = employeePercentileProcessor;
-    processor.setColumnNames(Arrays.asList("Department", "Median Income"));
-    processor.setReportKeyFunction(employee -> employee.getDepartment().getName());
-    processor.setReportValueFunction(Employee::getSalary);
-    processor.setPercentile(50);
+  private Processor<Employee> getEmployeeMedianIncome() {
+    Percentile<Employee> percentile = new Percentile<>(50, Employee::getSalary);
+    Processor<Employee> processor = new Processor<>();
+    processor.addSelector(new Processor.Selector<>("Department", employee -> employee.getDepartment().getName()));
+    processor.addAggregator(new Processor.Aggregator<>("Median Income", percentile::get));
     return processor;
   }
 
-  private AbstractProcessor<Employee> getEmployee95PercentileIncome() {
-    PercentileProcessor<Employee> processor = employeePercentileProcessor;
-    processor.setColumnNames(Arrays.asList("Department", "95 Percentile Income"));
-    processor.setReportKeyFunction(employee -> employee.getDepartment().getName());
-    processor.setReportValueFunction(Employee::getSalary);
-    processor.setPercentile(95);
+  private Processor<Employee> getEmployee95PercentileIncome() {
+    Percentile<Employee> percentile = new Percentile<>(95, Employee::getSalary);
+    Processor<Employee> processor = new Processor<>();
+    processor.addSelector(new Processor.Selector<>("Department", employee -> employee.getDepartment().getName()));
+    processor.addAggregator(new Processor.Aggregator<>("Median Income", percentile::get));
     return processor;
   }
 
-  private AbstractProcessor<Employee> getEmployeeAverageIncomeByAge() {
-    AverageProcessor<Employee> processor = employeeAverageProcessor;
-    processor.setColumnNames(Arrays.asList("Age Range", "Average Income"));
-    processor.setReportKeyFunction(employee -> getAgeSteps(employee.getPerson().getAge()));
-    processor.setReportValueFunction(Employee::getSalary);
+  private Processor<Employee> getEmployeeAverageIncomeByAge() {
+    Average<Employee> average = new Average<>(Employee::getSalary);
+    Processor<Employee> processor = new Processor<>();
+    processor.addSelector(new Processor.Selector<>("Age Range", employee -> getAgeSteps(employee.getPerson().getAge())));
+    processor.addAggregator(new Processor.Aggregator<>("Average Income", average::get));
     return processor;
   }
 
@@ -132,27 +115,28 @@ public class Application {
     return String.format("%d - %d", floor, ceil);
   }
 
-  private AbstractProcessor<Employee> getEmployeeMedianAge() {
-    PercentileProcessor<Employee> processor = employeePercentileProcessor;
-    processor.setColumnNames(Arrays.asList("Department", "Median Age"));
-    processor.setReportKeyFunction(employee -> employee.getDepartment().getName());
-    processor.setReportValueFunction(employee -> (double) employee.getPerson().getAge());
-    processor.setPercentile(50);
+  private Processor<Employee> getEmployeeMedianAge() {
+    Percentile<Employee> percentile = new Percentile<>(50, employee -> (double) employee.getPerson().getAge());
+    Processor<Employee> processor = new Processor<>();
+    processor.addSelector(new Processor.Selector<>("Department", employee -> employee.getDepartment().getName()));
+    processor.addAggregator(new Processor.Aggregator<>("Median Age", percentile::get));
     return processor;
   }
 
-  private AbstractProcessor<Employee> getEmployeeAverageIncomeByGenderAndDepartment() {
-    AverageProcessor<Employee> processor = employeeAverageProcessor;
-    processor.setColumnNames(Arrays.asList("Department And Gender", "Average Income"));
-    processor.setReportKeyFunction(employee -> employee.getDepartment().getName() + " " + employee.getPerson().getGender());
-    processor.setReportValueFunction(Employee::getSalary);
+  private Processor<Employee> getEmployeeAverageIncomeByGenderAndDepartment() {
+    Average<Employee> average = new Average<>(Employee::getSalary);
+    Processor<Employee> processor = new Processor<>();
+    processor.addSelector(new Processor.Selector<>("Department", employee -> employee.getDepartment().getName()));
+    processor.addSelector(new Processor.Selector<>("Gender", employee -> employee.getPerson().getGender().name()));
+    processor.addAggregator(new Processor.Aggregator<>("Average Income", average::get));
     return processor;
   }
 
-  private AbstractProcessor<Employee> getEmployeeCountByGenderAndDepartment() {
-    CountingProcessor<Employee> processor = employeeCountingProcessor;
-    processor.setColumnNames(Arrays.asList("Department And Gender", "People Count"));
-    processor.setReportKeyFunction(employee -> employee.getDepartment().getName() + " " + employee.getPerson().getGender());
+  private Processor<Employee> getEmployeeCountByGenderAndDepartment() {
+    Processor<Employee> processor = new Processor<>();
+    processor.addSelector(new Processor.Selector<>("Department", employee -> employee.getDepartment().getName()));
+    processor.addSelector(new Processor.Selector<>("Gender", employee -> employee.getPerson().getGender().name()));
+    processor.addAggregator(new Processor.Aggregator<>("Employee Count", List::size));
     return processor;
   }
 

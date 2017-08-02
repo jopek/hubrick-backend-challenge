@@ -10,7 +10,7 @@ import static java.util.Arrays.asList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThat;
 
-public class MultiKeyProcessorTest {
+public class ProcessorTest {
 
   private class Thing {
     public String name;
@@ -22,7 +22,7 @@ public class MultiKeyProcessorTest {
     }
   }
 
-  private MultiKeyProcessor<Thing> thingMultiKeyProcessor = new MultiKeyProcessor<>();
+  private Processor<Thing> thingProcessor = new Processor<>();
 
   @Test
   public void name() throws Exception {
@@ -40,10 +40,10 @@ public class MultiKeyProcessorTest {
         new Thing("b", 6)
     );
 
-    thingMultiKeyProcessor.addSelector(new MultiKeyProcessor.Selector<>("name", thing -> thing.name));
-    thingMultiKeyProcessor.addAggregator(new MultiKeyProcessor.Aggregator<>("count", List::size));
-    thingMultiKeyProcessor.addAggregator(
-        new MultiKeyProcessor.Aggregator<>(
+    thingProcessor.addSelector(new Processor.Selector<>("name", thing -> thing.name));
+    thingProcessor.addAggregator(new Processor.Aggregator<>("count", List::size));
+    thingProcessor.addAggregator(
+        new Processor.Aggregator<>(
             "avg",
             thingList -> thingList.stream()
                 .mapToDouble(t -> t.value)
@@ -51,13 +51,11 @@ public class MultiKeyProcessorTest {
                 .orElse(0))
     );
 
-    Report report = thingMultiKeyProcessor.process(things);
-
-//    AllOf.allOf(eq("name"), eq("count"))
+    Report report = thingProcessor.process(things);
 
     assertThat(report.getColumnNames(), CoreMatchers.hasItems("name", "count", "avg"));
-    assertEquals(2, report.getLlValues().size());
-    assertEquals(3, report.getLlValues().get(0).size());
-    assertEquals(3, report.getLlValues().get(1).size());
+    assertEquals(2, report.getValues().size());
+    assertEquals(3, report.getValues().get(0).size());
+    assertEquals(3, report.getValues().get(1).size());
   }
 }

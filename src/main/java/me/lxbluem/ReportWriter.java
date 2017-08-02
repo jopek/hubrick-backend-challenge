@@ -7,10 +7,9 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Collectors;
 
-import static java.nio.file.StandardOpenOption.CREATE;
-import static java.nio.file.StandardOpenOption.WRITE;
+import static java.nio.file.StandardOpenOption.*;
+import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toList;
 
 public class ReportWriter {
@@ -21,14 +20,13 @@ public class ReportWriter {
     content.add(getHeader(report));
     content.addAll(getContent(report));
 
-    Files.write(Paths.get(filename), content, CREATE, WRITE);
+    Files.write(Paths.get(filename), content, CREATE, TRUNCATE_EXISTING, WRITE);
   }
 
   private List<String> getContent(Report report) {
     return report.getValues()
-        .entrySet()
         .stream()
-        .map(entry -> String.format("%s,%.2f", entry.getKey(), entry.getValue()))
+        .map(entry -> entry.stream().collect(joining(",")))
         .sorted()
         .collect(toList());
   }
@@ -36,6 +34,6 @@ public class ReportWriter {
   private String getHeader(Report report) {
     return report.getColumnNames()
         .stream()
-        .collect(Collectors.joining(","));
+        .collect(joining(","));
   }
 }

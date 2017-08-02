@@ -8,7 +8,7 @@ import java.util.stream.Collectors;
 
 import static java.util.stream.Collectors.toList;
 
-public class MultiKeyProcessor<T> {
+public class Processor<T> {
 
   private List<Selector<T>> selectors = new ArrayList<>();
   private List<Aggregator<T>> aggregators = new ArrayList<>();
