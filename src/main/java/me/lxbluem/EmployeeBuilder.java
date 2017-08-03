@@ -21,9 +21,9 @@ import static me.lxbluem.model.Person.Gender.U;
 
 public class EmployeeBuilder {
 
-  private AgesReader agesReader;
-  private EmployeesReader employeesReader;
-  private DepartmentsReader departmentsReader;
+  private final AgesReader agesReader;
+  private final EmployeesReader employeesReader;
+  private final DepartmentsReader departmentsReader;
 
   public EmployeeBuilder(AgesReader agesReader, EmployeesReader employeesReader, DepartmentsReader departmentsReader) {
     this.agesReader = agesReader;
@@ -61,7 +61,7 @@ public class EmployeeBuilder {
     String name = employeeData.name;
     int departmentId = employeeData.departmentId;
     Gender gender = matchGender(employeeData.gender);
-    String departmentName = Optional.ofNullable(departmentDataMap.get(departmentId)).orElse("unknown department");
+    String departmentName = Optional.ofNullable(departmentDataMap.get(departmentId)).orElse(Department.DEFAULT_NAME);
 
     Person person = Person.of(name, ageDataMap.get(name), gender);
     Department department = Department.of(departmentId, departmentName);

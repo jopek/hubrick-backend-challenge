@@ -5,7 +5,9 @@ import me.lxbluem.filereader.DepartmentsReader;
 import me.lxbluem.filereader.EmployeesReader;
 import me.lxbluem.model.Employee;
 import me.lxbluem.model.Report;
-import me.lxbluem.processor.*;
+import me.lxbluem.processor.Aggregator;
+import me.lxbluem.processor.Processor;
+import me.lxbluem.processor.Selector;
 import me.lxbluem.processor.methods.Average;
 import me.lxbluem.processor.methods.Percentile;
 
@@ -16,11 +18,14 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import static java.lang.String.format;
+import static java.util.stream.Collectors.joining;
+
 public class Application {
-  private EmployeeBuilder employeeBuilder;
+  private final EmployeeBuilder employeeBuilder;
   private List<Employee> employees;
   private Map<String, Report> reports = new HashMap<>();
-  private ReportWriter reportWriter;
+  private final ReportWriter reportWriter;
 
   public static void main(String[] args) {
     if (args.length != 1) {
@@ -68,6 +73,7 @@ public class Application {
     reports.put("employee-age-by-department.csv", getEmployeeMedianAge().process(employees));
     reports.put("income-average-by-gender-and-department.csv", getEmployeeAverageIncomeByGenderAndDepartment().process(employees));
     reports.put("employee-count-by-gender-and-department.csv", getEmployeeCountByGenderAndDepartment().process(employees));
+    reports.put("employee-count-and-median-and-average-by-department-and-gender-and-agerange.csv", getEmployeeMega().process(employees));
   }
 
   private void write() {
@@ -112,7 +118,7 @@ public class Application {
     if (floor == ceil)
       ceil += stepSize;
 
-    return String.format("%d - %d", floor, ceil);
+    return format("%d - %d", floor, ceil);
   }
 
   private Processor<Employee> getEmployeeMedianAge() {
@@ -127,7 +133,7 @@ public class Application {
     Average<Employee> average = new Average<>(Employee::getSalary);
     Processor<Employee> processor = new Processor<>();
     processor.addSelector(new Selector<>("Department", employee -> employee.getDepartment().getName()));
-    processor.addSelector(new Selector<>("Gender", employee -> employee.getPerson().getGender().name()));
+    processor.addSelector(new Selector<>("Gender", employee -> employee.getPerson().getGender().toString()));
     processor.addAggregator(new Aggregator<>("Average Income", average::get));
     return processor;
   }
@@ -135,8 +141,30 @@ public class Application {
   private Processor<Employee> getEmployeeCountByGenderAndDepartment() {
     Processor<Employee> processor = new Processor<>();
     processor.addSelector(new Selector<>("Department", employee -> employee.getDepartment().getName()));
-    processor.addSelector(new Selector<>("Gender", employee -> employee.getPerson().getGender().name()));
+    processor.addSelector(new Selector<>("Gender", employee -> employee.getPerson().getGender().toString()));
     processor.addAggregator(new Aggregator<>("Employee Count", List::size));
+    return processor;
+  }
+
+  private Processor<Employee> getEmployeeMega() {
+    Average<Employee> average = new Average<>(Employee::getSalary);
+    Percentile<Employee> percentile = new Percentile<>(50, employee -> (double) employee.getSalary());
+
+    Processor<Employee> processor = new Processor<>();
+    processor.addSelector(new Selector<>("Department", employee -> employee.getDepartment().getName()));
+    processor.addSelector(new Selector<>("Gender", employee -> employee.getPerson().getGender().toString()));
+    processor.addSelector(new Selector<>("Age Range", employee -> getAgeSteps(employee.getPerson().getAge())));
+    processor.addAggregator(new Aggregator<>("Employee Count", List::size));
+    processor.addAggregator(new Aggregator<>("Income Median", percentile::get));
+    processor.addAggregator(new Aggregator<>("Income Average", average::get));
+    processor.addAggregator(
+        new Aggregator<>(
+            "Salary List",
+            employeeList -> employeeList.stream()
+                .map(Employee::getSalary)
+                .map(d -> format("%.2f", d))
+                .collect(joining(" "))
+        ));
     return processor;
   }
 

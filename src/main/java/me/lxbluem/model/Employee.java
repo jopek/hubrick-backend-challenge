@@ -1,9 +1,9 @@
 package me.lxbluem.model;
 
 public class Employee {
-  private Person person;
-  private double salary;
-  private Department department;
+  private final Person person;
+  private final double salary;
+  private final Department department;
 
   private Employee(Person person, float salary, Department department) {
     this.person = person;

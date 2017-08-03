@@ -3,8 +3,8 @@ package me.lxbluem.model;
 import java.util.List;
 
 public class Report {
-  private List<List<String>> values;
-  private List<String> columnNames;
+  private final List<List<String>> values;
+  private final List<String> columnNames;
 
   private Report(List<List<String>> values, List<String> columnNames) {
     this.values = values;

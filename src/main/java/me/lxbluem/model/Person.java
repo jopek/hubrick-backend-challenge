@@ -1,8 +1,8 @@
 package me.lxbluem.model;
 
 public class Person {
-  private String name;
-  private int age;
+  private final String name;
+  private final int age;
 
   private Gender gender;
 
@@ -58,6 +58,17 @@ public class Person {
   }
 
   public enum Gender {
-    F, M, U
+    F("Female"), M("Male"), U("Unspecified"), N("Nonbinary") /*it's 2017, baby!*/;
+
+    private final String genderRepresentation;
+
+    Gender(String genderRepresentation) {
+      this.genderRepresentation = genderRepresentation;
+    }
+
+    @Override
+    public String toString() {
+      return genderRepresentation;
+    }
   }
 }

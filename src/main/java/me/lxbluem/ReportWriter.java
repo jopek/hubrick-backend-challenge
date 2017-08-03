@@ -23,17 +23,17 @@ public class ReportWriter {
     Files.write(Paths.get(filename), content, CREATE, TRUNCATE_EXISTING, WRITE);
   }
 
+  private String getHeader(Report report) {
+    return report.getColumnNames()
+        .stream()
+        .collect(joining(","));
+  }
+
   private List<String> getContent(Report report) {
     return report.getValues()
         .stream()
         .map(entry -> entry.stream().collect(joining(",")))
         .sorted()
         .collect(toList());
-  }
-
-  private String getHeader(Report report) {
-    return report.getColumnNames()
-        .stream()
-        .collect(joining(","));
   }
 }

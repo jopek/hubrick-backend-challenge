@@ -1,8 +1,10 @@
 package me.lxbluem.model;
 
 public class Department {
-  private int id;
-  private String name;
+  private final int id;
+  private final String name;
+
+  public final static String DEFAULT_NAME = "Unknown Department";
 
   private Department(int id, String name) {
     this.id = id;

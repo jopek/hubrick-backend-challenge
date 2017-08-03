@@ -2,6 +2,7 @@ package me.lxbluem.processor;
 
 import me.lxbluem.model.Report;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -22,18 +23,14 @@ public class Processor<T> {
             toList()
         ));
 
-    Map<List<Object>, List<Number>> report = groupedEntries.entrySet()
+    Map<List<Object>, List<Serializable>> aggregated = groupedEntries.entrySet()
         .stream()
         .collect(Collectors.toMap(
             Map.Entry::getKey,
             this::runAggregationFunctions
         ));
 
-    List<String> columnNames = new ArrayList<>();
-    columnNames.addAll(getSelectorNames());
-    columnNames.addAll(getAggregatorNames());
-
-    List<List<String>> values = report.entrySet()
+    List<List<String>> reportContent = aggregated.entrySet()
         .stream()
         .map(x -> {
           List<String> keys = x.getKey().stream().map(Object::toString).collect(toList());
@@ -45,7 +42,11 @@ public class Processor<T> {
         })
         .collect(toList());
 
-    return Report.of(values, columnNames);
+    List<String> columnNames = new ArrayList<>();
+    columnNames.addAll(getSelectorNames());
+    columnNames.addAll(getAggregatorNames());
+
+    return Report.of(reportContent, columnNames);
   }
 
   public void addSelector(Selector<T> selector) {
@@ -64,7 +65,7 @@ public class Processor<T> {
         .collect(toList());
   }
 
-  private List<Number> runAggregationFunctions(Map.Entry<List<Object>, List<T>> entries) {
+  private List<Serializable> runAggregationFunctions(Map.Entry<List<Object>, List<T>> entries) {
     return aggregators.stream()
         .map(aggregator -> aggregator.function.apply(entries.getValue()))
         .collect(toList());
