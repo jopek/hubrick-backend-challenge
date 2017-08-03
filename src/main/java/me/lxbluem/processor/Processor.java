@@ -88,9 +88,9 @@ public class Processor<T> {
 
   private void validateAggregator(Aggregator aggregator) {
     if (Objects.isNull(aggregator))
-      throw new IllegalArgumentException("Selector must not be null");
+      throw new IllegalArgumentException("Aggregator must not be null");
     if (Objects.isNull(aggregator.function))
-      throw new IllegalArgumentException("Selector's function must not be null");
+      throw new IllegalArgumentException("Aggregator's function must not be null");
   }
 
 }
